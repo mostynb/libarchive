@@ -782,6 +782,44 @@ DEFINE_TEST(test_read_format_7zip_deflate)
 	assertEqualInt(ARCHIVE_OK, archive_read_free(a));
 }
 
+DEFINE_TEST(test_read_format_7zip_zstd)
+{
+	struct archive *a;
+
+	assert((a = archive_read_new()) != NULL);
+
+	/* Extracting with libzstd */
+	if (ARCHIVE_OK != archive_read_support_filter_zstd(a)) {
+		skipping(
+		    "7zip:zstd decoding is not supported on this platform");
+	} else {
+		test_plain_header("test_read_format_7zip_zstd.7z");
+		test_extract_all_files("test_read_format_7zip_zstd.7z");
+		test_extract_last_file("test_read_format_7zip_zstd.7z");
+	}
+
+	assertEqualInt(ARCHIVE_OK, archive_read_free(a));
+}
+
+DEFINE_TEST(test_read_format_7zip_zstd_solid)
+{
+	struct archive *a;
+
+	assert((a = archive_read_new()) != NULL);
+
+	/* Extracting with libzstd */
+	if (ARCHIVE_OK != archive_read_support_filter_zstd(a)) {
+		skipping(
+		    "7zip:zstd decoding is not supported on this platform");
+	} else {
+		test_plain_header("test_read_format_7zip_zstd_solid.7z");
+		test_extract_all_files("test_read_format_7zip_zstd_solid.7z");
+		test_extract_last_file("test_read_format_7zip_zstd_solid.7z");
+	}
+
+	assertEqualInt(ARCHIVE_OK, archive_read_free(a));
+}
+
 DEFINE_TEST(test_read_format_7zip_empty)
 {
 	test_empty_archive();
