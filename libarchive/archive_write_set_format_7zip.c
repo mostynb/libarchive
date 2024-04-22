@@ -2383,6 +2383,9 @@ compression_init_encoder_zstd(struct archive *a, struct la_zstream *lastrm, int 
 			"Internal error initializing zstd compressor properties");
 		return (ARCHIVE_FATAL);
 	}
+
+	// Refer to the DProps struct in 7-Zip-zstd's ZstdDecoder.h:
+	// https://github.com/mcmilk/7-Zip-zstd/blob/79b2c78e9e7735ddf90147129b75cf2797ff6522/CPP/7zip/Compress/ZstdDecoder.h#L34S
 	lastrm->props[0] = ZSTD_VERSION_MAJOR;
 	lastrm->props[1] = ZSTD_VERSION_MINOR;
 	lastrm->props[2] = level;
