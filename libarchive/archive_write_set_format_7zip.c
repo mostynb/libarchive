@@ -2434,25 +2434,13 @@ compression_code_zstd(struct archive *a,
 
 	// action == ARCHIVE_Z_FINISH
 
-	do {
-		zret = ZSTD_compressStream2(strm, &out, &in, ZSTD_e_flush);
-		if (ZSTD_isError(zret)) {
-			archive_set_error(a, ARCHIVE_ERRNO_MISC,
-				"zstd compression failed, INTERNAL ERROR1 ZSTD_compressStream2 returned: %s",
-				ZSTD_getErrorName(zret));
-			return (ARCHIVE_FATAL);
-		}
-	} while (zret > 0);
-
-	do {
-		zret = ZSTD_compressStream2(strm, &out, &in, ZSTD_e_end);
-		if (ZSTD_isError(zret)) {
-			archive_set_error(a, ARCHIVE_ERRNO_MISC,
-				"zstd compression failed, INTERNAL ERROR2 ZSTD_compressStream2 returned: %s",
-				ZSTD_getErrorName(zret));
-			return (ARCHIVE_FATAL);
-		}
-	} while (zret > 0);
+	zret = ZSTD_compressStream2(strm, &out, &in, ZSTD_e_end);
+	if (ZSTD_isError(zret)) {
+		archive_set_error(a, ARCHIVE_ERRNO_MISC,
+			"zstd compression failed, ZSTD_compressStream2 returned: %s",
+			ZSTD_getErrorName(zret));
+		return (ARCHIVE_FATAL);
+	}
 
 	lastrm->next_in += in.pos;
 	lastrm->avail_in -= in.pos;
@@ -2462,7 +2450,10 @@ compression_code_zstd(struct archive *a,
 	lastrm->avail_out -= out.pos;
 	lastrm->total_out += out.pos;
 
-	return (ARCHIVE_EOF);
+	if (zret == 0)
+		return (ARCHIVE_EOF); // All done.
+
+	return (ARCHIVE_OK); // More work to do.
 }
 
 static int
