@@ -117,6 +117,9 @@
 // the attr field along with the unix permissions.
 #define FILE_ATTRIBUTE_UNIX_EXTENSION 0x8000
 
+// Many systems define min or MIN, but not all.
+#define sevenzipmin(a,b) ((a) < (b) ? (a) : (b))
+
 enum la_zaction {
 	ARCHIVE_Z_FINISH,
 	ARCHIVE_Z_RUN
@@ -473,19 +476,23 @@ _7z_options(struct archive_write *a, const char *key, const char *value)
 			return (ARCHIVE_FAILED);
 		}
 
-#if HAVE_ZSTD_H
-		if (lvl < ZSTD_minCLevel() || lvl > ZSTD_maxCLevel()) {
+#if HAVE_ZSTD_H && HAVE_ZSTD_compressStream && HAVE_ZSTD_minCLevel
+		int min_level = sevenzipmin(0, ZSTD_minCLevel());
+#else
+		const int min_level = 0;
+#endif
+
+#if HAVE_ZSTD_H && HAVE_ZSTD_compressStream
+		int max_level = ZSTD_maxCLevel();
+#else
+		const int max_level = 9;
+#endif
+
+		if (lvl < min_level || lvl > max_level) {
 			archive_set_error(&(a->archive), ARCHIVE_ERRNO_MISC,
 				"compression-level option value `%d' out of range", lvl);
 			return (ARCHIVE_FAILED);
 		}
-#else
-		if (lvl < 0 || lvl > 9) {
-			archive_set_error(&(a->archive), ARCHIVE_ERRNO_MISC,
-				"compression-level option value `%d' out of range 0-9", lvl);
-			return (ARCHIVE_FAILED);
-		}
-#endif
 
 		// Note: we don't know here if this value is for zstd (negative to ~22),
 		// or zlib-style 0-9. If zstd is enabled but not in use, we will need to
