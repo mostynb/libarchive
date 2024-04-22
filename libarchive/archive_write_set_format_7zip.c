@@ -2406,35 +2406,13 @@ compression_code_zstd(struct archive *a,
 	ZSTD_CStream *strm = (ZSTD_CStream *)lastrm->real_stream;
 
 	ZSTD_outBuffer out = { .dst = lastrm->next_out, .size = lastrm->avail_out, .pos = 0 };
-
-	ZSTD_inBuffer in = { .src = lastrm->next_in, .size = lastrm->avail_in, .pos = 0 };
+	ZSTD_inBuffer  in  = { .src = lastrm->next_in,  .size = lastrm->avail_in,  .pos = 0 };
 
 	size_t zret;
 
-	if (action == ARCHIVE_Z_RUN) {
-		zret = ZSTD_compressStream2(strm, &out, &in, ZSTD_e_continue);
+	ZSTD_EndDirective mode = (action == ARCHIVE_Z_RUN) ? ZSTD_e_continue : ZSTD_e_end;
 
-		if (ZSTD_isError(zret)) {
-			archive_set_error(a, ARCHIVE_ERRNO_MISC,
-				"zstd compression failed, ZSTD_compressStream2 returned: %s",
-				ZSTD_getErrorName(zret));
-			return (ARCHIVE_FATAL);
-		}
-
-		lastrm->next_in += in.pos;
-		lastrm->avail_in -= in.pos;
-		lastrm->total_in += in.pos;
-
-		lastrm->next_out += out.pos;
-		lastrm->avail_out -= out.pos;
-		lastrm->total_out += out.pos;
-
-		return (ARCHIVE_OK);
-	}
-
-	// action == ARCHIVE_Z_FINISH
-
-	zret = ZSTD_compressStream2(strm, &out, &in, ZSTD_e_end);
+	zret = ZSTD_compressStream2(strm, &out, &in, mode);
 	if (ZSTD_isError(zret)) {
 		archive_set_error(a, ARCHIVE_ERRNO_MISC,
 			"zstd compression failed, ZSTD_compressStream2 returned: %s",
@@ -2450,7 +2428,7 @@ compression_code_zstd(struct archive *a,
 	lastrm->avail_out -= out.pos;
 	lastrm->total_out += out.pos;
 
-	if (zret == 0)
+	if (action == ARCHIVE_Z_FINISH && zret == 0)
 		return (ARCHIVE_EOF); // All done.
 
 	return (ARCHIVE_OK); // More work to do.
