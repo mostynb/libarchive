@@ -461,15 +461,8 @@ _7z_options(struct archive_write *a, const char *key, const char *value)
 			return (ARCHIVE_FAILED);
 		}
 
-		errno = 0;
 		char *end = NULL;
-		int lvl = (int)strtol(value, &end, 10);
-
-		if (errno) {
-			archive_set_error(&(a->archive), errno,
-				"parsing compression-level option value failed `%s'", value);
-			return (ARCHIVE_FAILED);
-		}
+		long lvl = strtol(value, &end, 10);
 		if (end == NULL || *end != '\0') {
 			archive_set_error(&(a->archive), ARCHIVE_ERRNO_MISC,
 				"parsing compression-level option value failed `%s'", value);
@@ -490,16 +483,16 @@ _7z_options(struct archive_write *a, const char *key, const char *value)
 
 		if (lvl < min_level || lvl > max_level) {
 			archive_set_error(&(a->archive), ARCHIVE_ERRNO_MISC,
-				"compression-level option value `%d' out of range", lvl);
+				"compression-level option value `%ld' out of range", lvl);
 			return (ARCHIVE_FAILED);
 		}
 
 		// Note: we don't know here if this value is for zstd (negative to ~22),
 		// or zlib-style 0-9. If zstd is enabled but not in use, we will need to
 		// validate opt_compression_level before use.
-		zip->opt_compression_level = lvl;
+		zip->opt_compression_level = (int)lvl;
 
-		zip->opt_zstd_compression_level = lvl;
+		zip->opt_zstd_compression_level = (int)lvl;
 		return (ARCHIVE_OK);
 	}
 
