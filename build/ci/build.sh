@@ -142,6 +142,11 @@ for action in ${ACTIONS}; do
 			RET="$?"
 		;;
 		test)
+			# Use a fresh temp dir so logs from earlier runs aren't reported
+			TESTTMP="${BUILDDIR}/test_tmp"
+			rm -rf "${TESTTMP}"
+			mkdir -p "${TESTTMP}"
+			export TMPDIR="${TESTTMP}"
 			case "${BS}" in
 				autotools)
 					${MAKE} ${MAKE_ARGS} check LOG_DRIVER="${SRCDIR}/build/ci/test_driver" _VERBOSITY_LEVEL=2
@@ -160,6 +165,11 @@ for action in ${ACTIONS}; do
 			./usr/local/bin/bsdtar --version
 		;;
 		distcheck)
+			# Use a fresh temp dir so logs from earlier runs aren't reported
+			TESTTMP="${BUILDDIR}/test_tmp"
+			rm -rf "${TESTTMP}"
+			mkdir -p "${TESTTMP}"
+			export TMPDIR="${TESTTMP}"
 			${MAKE} ${MAKE_ARGS} distcheck || (
 				RET="$?"
 				find . -name 'test-suite.log' -print -exec cat {} \;
